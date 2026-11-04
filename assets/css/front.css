@@ -1,10 +1,11 @@
 /* Ofnoa Privacy Guard - front end */
 .opg-consent{margin:12px 0;font-size:.92em;line-height:1.5;text-align:start;clear:both;width:100%;box-sizing:border-box}
-.opg-consent .opg-notice{margin:0 0 8px;padding:8px 10px;background:rgba(0,0,0,.035);border-inline-start:3px solid #94a3b8;border-radius:4px;font-size:.92em;color:inherit;opacity:.9}
+.opg-consent .opg-notice{margin:0 0 8px!important;padding:8px 10px!important;background:#f6f7f9!important;border-inline-start:3px solid #94a3b8;border-radius:4px;font-size:.92em;color:#444!important;opacity:1}
 .opg-consent .opg-check{display:flex!important;align-items:flex-start;gap:8px;margin:6px 0!important;cursor:pointer;font-weight:normal!important;width:auto!important}
 .opg-consent .opg-check input[type=checkbox]{flex:0 0 auto;width:18px!important;height:18px!important;margin:2px 0 0!important;padding:0!important;appearance:auto!important;-webkit-appearance:checkbox!important;opacity:1!important;position:static!important;cursor:pointer}
 .opg-consent .opg-check span{flex:1 1 auto}
-.opg-consent a{text-decoration:underline}
+.opg-consent,.opg-consent p,.opg-consent span,.opg-consent label{line-height:1.5!important}
+.opg-consent a,.opg-consent a:visited,.opg-consent a:hover{color:inherit!important;text-decoration:underline!important;font-weight:600;background:none!important}
 .opg-consent .opg-req{color:#dc2626;text-decoration:none;border:0}
 .opg-consent .wpcf7-form-control-wrap{display:inline-flex}
 .opg-consent.opg-invalid .opg-check-privacy{outline:2px solid #dc2626;outline-offset:3px;border-radius:3px}
