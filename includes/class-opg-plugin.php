@@ -22,6 +22,12 @@ class OPG_Plugin {
 			self::install_tables();
 		}
 
+		// 1.0.3: footer privacy links are on by default - switch them on once for existing installs.
+		if ( ! get_option( 'opg_migrated_103' ) ) {
+			OPG_Settings::update( array( 'auto_footer_links' => 1 ) );
+			update_option( 'opg_migrated_103', 1, false );
+		}
+
 		OPG_Audit_Log::init();
 		OPG_Consent::init();
 		OPG_Requests::init();

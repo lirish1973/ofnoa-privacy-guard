@@ -692,7 +692,7 @@ class OPG_Admin {
 		self::f_bool( 'weekly_scan', 'סריקה שבועית', 'סריקה אוטומטית ושליחת דוח כשיש ממצא קריטי, ירידה בציון או בקשה באיחור' );
 		self::f_text( 'scan_email', 'דוא"ל לדוח השבועי', '', 'email' );
 		self::f_bool( 'audit_log', 'יומן אבטחה', 'תיעוד התחברויות, ניסיונות כושלים, הרשאות, תוספים, ייצוא ומחיקה' );
-		self::f_bool( 'auto_footer_links', 'קישורי פרטיות בפוטר', 'הוספת שורת קישורים (מדיניות | Cookie | בקשות) בתחתית כל עמוד' );
+		self::f_bool( 'auto_footer_links', 'קישורי פרטיות בפוטר', 'שורת קישורים אוטומטית בתחתית כל עמוד לכל העמודים שהתוסף הפיק ופורסמו (מדיניות פרטיות, Privacy Policy, מדיניות Cookie, בקשות פרטיות) + הגדרות Cookie. אם הוספתם את <code>[opg_privacy_links]</code> לפוטר של התבנית - השורה האוטומטית לא תוצג פעמיים.' );
 		echo '</table></div>';
 
 		echo '<p class="submit opg-save"><button type="submit" class="button button-primary button-hero">שמירת הגדרות</button></p></form>';

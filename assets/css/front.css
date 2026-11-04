@@ -25,7 +25,10 @@
 .opg-table th,.opg-table td{border:1px solid rgba(0,0,0,.15);padding:6px 8px;text-align:start;vertical-align:top}
 
 /* Footer links */
-.opg-footer-links{text-align:center;padding:10px 12px;font-size:13px;background:rgba(0,0,0,.04)}
+.opg-footer-links{text-align:center;padding:10px 12px;font-size:13px;line-height:1.8;background:#111827;color:#d1d5db;clear:both;position:relative;z-index:1}
+.opg-footer-links a,.opg-footer-links a:visited{color:#e5e7eb!important;text-decoration:underline!important}
+.opg-footer-links a:hover{color:#fff!important}
+.opg-privacy-links .opg-sep{opacity:.5;margin:0 6px}
 .opg-privacy-links a{text-decoration:underline}
 
 /* Cookie banner */

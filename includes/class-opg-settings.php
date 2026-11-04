@@ -89,7 +89,7 @@ class OPG_Settings {
 			'last_review'            => '',
 			'policy_page_en_id'      => 0,
 			'cookie_page_id'         => 0,
-			'auto_footer_links'      => 0,
+			'auto_footer_links'      => 1,
 		);
 	}
 
