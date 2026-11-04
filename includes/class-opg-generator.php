@@ -179,7 +179,7 @@ class OPG_Generator {
 	 * @param string $key Key.
 	 * @return int|WP_Error Post id.
 	 */
-	public static function create_page( $key ) {
+	public static function create_page( $key, $status = 'draft' ) {
 		$cat = OPG_Templates::catalogue();
 		if ( ! isset( $cat[ $key ] ) || 'public' !== $cat[ $key ][1] ) {
 			return new WP_Error( 'opg_bad_doc', 'Unknown document' );
@@ -203,7 +203,7 @@ class OPG_Generator {
 		$post_id = wp_insert_post(
 			array(
 				'post_type'    => 'page',
-				'post_status'  => 'draft',
+				'post_status'  => in_array( $status, array( 'draft', 'publish' ), true ) ? $status : 'draft',
 				'post_title'   => $titles[ $key ],
 				'post_name'    => $slugs[ $key ],
 				'post_content' => $body,
@@ -228,6 +228,78 @@ class OPG_Generator {
 			OPG_Settings::update( $s );
 		}
 		return $post_id;
+	}
+
+	/**
+	 * One click: create (or reuse) the rights-request page, publish it, and link it
+	 * from the privacy policy. The footer bar links it automatically.
+	 *
+	 * @return array{page_id:int,policy_linked:bool,note:string}|WP_Error
+	 */
+	public static function setup_rights_page() {
+		$id = (int) OPG_Settings::get( 'requests_page_id' );
+		if ( $id && get_post( $id ) && 'trash' !== get_post_status( $id ) ) {
+			if ( 'publish' !== get_post_status( $id ) ) {
+				wp_update_post(
+					array(
+						'ID'          => $id,
+						'post_status' => 'publish',
+					)
+				);
+			}
+			if ( ! has_shortcode( (string) get_post_field( 'post_content', $id ), 'opg_rights_request' ) ) {
+				wp_update_post(
+					array(
+						'ID'           => $id,
+						'post_content' => get_post_field( 'post_content', $id ) . "\n[opg_rights_request]",
+					)
+				);
+			}
+		} else {
+			$id = self::create_page( 'rights_page', 'publish' );
+			if ( is_wp_error( $id ) ) {
+				return $id;
+			}
+		}
+		$linked = self::link_from_policy( (int) $id );
+		return array(
+			'page_id'       => (int) $id,
+			'policy_linked' => $linked,
+		);
+	}
+
+	/**
+	 * Add a link to the rights page at the end of the privacy policy (classic / block content).
+	 * Pages built with Elementor are left alone - the footer bar covers them.
+	 *
+	 * @param int $page_id Rights page.
+	 * @return bool Linked (now or already).
+	 */
+	public static function link_from_policy( $page_id ) {
+		$policy_id = (int) get_option( 'wp_page_for_privacy_policy' );
+		$policy    = $policy_id ? get_post( $policy_id ) : null;
+		if ( ! $policy || ! $page_id ) {
+			return false;
+		}
+		$url = get_permalink( $page_id );
+		if ( false !== strpos( $policy->post_content, $url ) || false !== strpos( $policy->post_content, 'page_id=' . $page_id ) || false !== strpos( $policy->post_content, 'opg-rights-link' ) ) {
+			return true;
+		}
+		if ( 'builder' === get_post_meta( $policy_id, '_elementor_edit_mode', true ) ) {
+			return false;
+		}
+		$para = '<p class="opg-rights-link">לבקשות עיון במידע, תיקון, מחיקה או הסרה מדיוור - מלאו את <a href="' . esc_url( $url ) . '">טופס בקשות הפרטיות</a>.</p>';
+		if ( function_exists( 'has_blocks' ) && has_blocks( $policy->post_content ) ) {
+			$para = "<!-- wp:paragraph {\"className\":\"opg-rights-link\"} -->\n" . $para . "\n<!-- /wp:paragraph -->";
+		}
+		$res = wp_update_post(
+			array(
+				'ID'           => $policy_id,
+				'post_content' => rtrim( $policy->post_content ) . "\n\n" . $para,
+			),
+			true
+		);
+		return ! is_wp_error( $res );
 	}
 
 	/**

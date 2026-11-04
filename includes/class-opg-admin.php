@@ -174,6 +174,8 @@ class OPG_Admin {
 			'imported' => 'ההגדרות יובאו.',
 			'badjson'  => 'קובץ ההגדרות לא תקין.',
 			'fixed'    => 'בוצע.',
+			'rights_ok'     => 'עמוד בקשות הפרטיות נוצר ופורסם, ונוסף אליו קישור בסוף מדיניות הפרטיות ובשורת הקישורים בפוטר.',
+			'rights_footer' => 'עמוד בקשות הפרטיות נוצר ופורסם ונוסף לשורת הקישורים בפוטר. את הקישור במדיניות לא הוספתי אוטומטית (המדיניות בנויה באלמנטור או לא מוגדרת) - הוסיפו אותו ידנית.',
 			'error'    => 'אירעה שגיאה.',
 		);
 		$key  = isset( $_GET['opg_msg'] ) ? sanitize_key( wp_unslash( $_GET['opg_msg'] ) ) : ''; // phpcs:ignore
@@ -270,6 +272,10 @@ class OPG_Admin {
 				if ( $c['fix'] && 'pass' !== $c['status'] ) {
 					echo '<div class="opg-check-fix"><strong>מה לעשות:</strong> ' . wp_kses_post( $c['fix'] ) . '</div>';
 				}
+				if ( 'rights_page' === $c['id'] && 'pass' !== $c['status'] ) {
+					printf( '<a class="button button-primary button-small" href="%s">יצירת עמוד, פרסום וקישור אוטומטי</a> ', esc_url( self::post_url( 'quick_fix', array( 'fix' => 'rights' ) ) ) );
+					$c['action'] = array();
+				}
 				if ( ! empty( $c['action'] ) ) {
 					printf( '<a class="button button-small" href="%s"%s>%s</a>', esc_url( $c['action'][1] ), 0 === strpos( $c['action'][1], 'http' ) && false === strpos( $c['action'][1], admin_url() ) ? ' target="_blank" rel="noopener"' : '', esc_html( $c['action'][0] ) );
 				}
@@ -308,7 +314,9 @@ class OPG_Admin {
 					printf( '<a href="%s">%s</a> (%s)<br>', esc_url( get_edit_post_link( $ids[ $key ] ) ), esc_html( get_the_title( $ids[ $key ] ) ), 'publish' === $st ? 'מפורסם' : esc_html( $st ) );
 				}
 				echo esc_html( $state ) . '</td><td>';
-				if ( 'public' === $type ) {
+				if ( 'rights_page' === $key ) {
+					printf( '<a class="button button-primary" href="%s">יצירה, פרסום וקישור</a> ', esc_url( self::post_url( 'quick_fix', array( 'fix' => 'rights' ) ) ) );
+				} elseif ( 'public' === $type ) {
 					printf( '<a class="button button-primary" href="%s">יצירת טיוטה</a> ', esc_url( self::post_url( 'create_page', array( 'doc' => $key ) ) ) );
 					printf( '<a class="button" target="_blank" href="%s">תצוגה</a>', esc_url( self::post_url( 'view_doc', array( 'doc' => $key ) ) ) );
 				} else {
@@ -409,7 +417,7 @@ class OPG_Admin {
 
 		$page = (int) OPG_Settings::get( 'requests_page_id' );
 		if ( ! $page ) {
-			printf( '<div class="notice notice-warning inline"><p>עדיין אין עמוד בקשות באתר. <a href="%s">צרו אותו בלחיצה</a>.</p></div>', esc_url( self::post_url( 'create_page', array( 'doc' => 'rights_page' ) ) ) );
+			printf( '<div class="notice notice-warning inline"><p>עדיין אין עמוד בקשות באתר. <a href="%s">צרו, פרסמו וקשרו אותו בלחיצה</a>.</p></div>', esc_url( self::post_url( 'quick_fix', array( 'fix' => 'rights' ) ) ) );
 		}
 
 		$rows = OPG_Requests::all( $filter );
@@ -812,11 +820,20 @@ class OPG_Admin {
 	public static function action_quick_fix() {
 		self::guard( 'quick_fix' );
 		$fix = isset( $_GET['fix'] ) ? sanitize_key( wp_unslash( $_GET['fix'] ) ) : '';
+		$msg = 'fixed';
 		if ( 'footer' === $fix ) {
 			OPG_Settings::update( array( 'auto_footer_links' => 1 ) );
-			delete_transient( 'opg_fetch_' . md5( home_url( '/' ) ) );
 		}
+		if ( 'rights' === $fix ) {
+			$res = OPG_Generator::setup_rights_page();
+			if ( is_wp_error( $res ) ) {
+				self::back( 'opg-scan', 'error' );
+			}
+			OPG_Settings::update( array( 'auto_footer_links' => 1 ) );
+			$msg = $res['policy_linked'] ? 'rights_ok' : 'rights_footer';
+		}
+		delete_transient( 'opg_fetch_' . md5( home_url( '/' ) ) );
 		OPG_Scanner::run();
-		self::back( 'opg-scan', 'fixed' );
+		self::back( 'opg-scan', $msg );
 	}
 }

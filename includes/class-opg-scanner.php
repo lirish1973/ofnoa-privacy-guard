@@ -435,7 +435,7 @@ class OPG_Scanner {
 	private static function check_rights( $s, $policy_text, $gen_url ) {
 		$page = (int) $s['requests_page_id'];
 		$ok   = $page && 'publish' === get_post_status( $page ) && has_shortcode( (string) get_post_field( 'post_content', $page ), 'opg_rights_request' );
-		self::add( 'rights', 'rights_page', 'טופס מקוון לבקשות עיון / תיקון / מחיקה', $ok ? 'pass' : 'fail', $ok ? '<a href="' . esc_url( get_permalink( $page ) ) . '" target="_blank">' . esc_html( get_the_title( $page ) ) . '</a> - עם אימות דוא"ל ומעקב מועדים.' : 'אין עמוד פעיל לבקשות מימוש זכויות.', 'צרו את העמוד בלחיצה (לשונית "מסמכים") וקשרו אליו מהמדיניות ומהפוטר.', 3, $ok ? array() : array( 'יצירת עמוד', $gen_url ) );
+		self::add( 'rights', 'rights_page', 'טופס מקוון לבקשות עיון / תיקון / מחיקה', $ok ? 'pass' : 'fail', $ok ? '<a href="' . esc_url( get_permalink( $page ) ) . '" target="_blank">' . esc_html( get_the_title( $page ) ) . '</a> - עם אימות דוא"ל ומעקב מועדים.' : 'אין עמוד פעיל לבקשות מימוש זכויות.', 'לחצו "יצירת עמוד, פרסום וקישור אוטומטי" - העמוד יפורסם, יקושר מסוף המדיניות ויופיע בשורת הקישורים בפוטר.', 3, $ok ? array() : array( 'יצירת עמוד', $gen_url ) );
 
 		$overdue = OPG_Requests::count_overdue();
 		$open    = OPG_Requests::count_open();
