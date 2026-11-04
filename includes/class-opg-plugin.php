@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 class OPG_Plugin {
 
 	const CRON_SCAN    = 'opg_weekly_scan';
+	const CRON_REPORT  = 'opg_monthly_report';
 	const CRON_CLEANUP = 'opg_daily_cleanup';
 
 	/**
@@ -41,6 +42,10 @@ class OPG_Plugin {
 		}
 
 		add_action( self::CRON_SCAN, array( __CLASS__, 'run_weekly_scan' ) );
+		add_action( self::CRON_REPORT, array( __CLASS__, 'run_monthly_report' ) );
+		add_filter( 'cron_schedules', array( __CLASS__, 'cron_schedules' ) );
+		add_filter( 'the_content', array( __CLASS__, 'filter_doc_content' ), 20 );
+		add_action( 'init', array( __CLASS__, 'ensure_cron' ) );
 		add_action( self::CRON_CLEANUP, array( __CLASS__, 'run_cleanup' ) );
 	}
 
@@ -52,6 +57,8 @@ class OPG_Plugin {
 		if ( ! wp_next_scheduled( self::CRON_SCAN ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'weekly', self::CRON_SCAN );
 		}
+		add_filter( 'cron_schedules', array( __CLASS__, 'cron_schedules' ) );
+		self::ensure_cron();
 		if ( ! wp_next_scheduled( self::CRON_CLEANUP ) ) {
 			wp_schedule_event( time() + 2 * HOUR_IN_SECONDS, 'daily', self::CRON_CLEANUP );
 		}
@@ -67,6 +74,7 @@ class OPG_Plugin {
 	 */
 	public static function deactivate() {
 		wp_clear_scheduled_hook( self::CRON_SCAN );
+		wp_clear_scheduled_hook( self::CRON_REPORT );
 		wp_clear_scheduled_hook( self::CRON_CLEANUP );
 	}
 
@@ -149,42 +157,109 @@ class OPG_Plugin {
 	}
 
 	/**
-	 * Weekly scan + email when the score drops or critical issues exist.
+	 * Monthly cron schedule.
+	 *
+	 * @param array $s Schedules.
+	 * @return array
+	 */
+	public static function cron_schedules( $s ) {
+		$s['opg_monthly'] = array(
+			'interval' => 30 * DAY_IN_SECONDS,
+			'display'  => 'Once a month (Ofnoa Privacy Guard)',
+		);
+		return $s;
+	}
+
+	/**
+	 * Make sure the monthly report is scheduled (also after an update - no activation hook runs then).
+	 * First report: the 1st of next month, 09:00 site time.
+	 */
+	public static function ensure_cron() {
+		if ( wp_next_scheduled( self::CRON_REPORT ) ) {
+			return;
+		}
+		$tz    = wp_timezone();
+		$first = new DateTime( 'first day of next month 09:00', $tz );
+		wp_schedule_event( $first->getTimestamp(), 'opg_monthly', self::CRON_REPORT );
+	}
+
+	/**
+	 * Weekly scan - silent, only keeps the report fresh (no email).
 	 */
 	public static function run_weekly_scan() {
-		$previous = get_option( 'opg_last_scan' );
+		OPG_Scanner::run();
+	}
+
+	/**
+	 * Monthly email report.
+	 *
+	 * @param bool $force Send even if disabled (manual "send now").
+	 * @return bool Sent.
+	 */
+	public static function run_monthly_report( $force = false ) {
+		$previous = get_option( 'opg_last_report_score' );
 		$result   = OPG_Scanner::run();
-		if ( ! OPG_Settings::get( 'weekly_scan' ) ) {
-			return;
+		if ( ! $force && ! OPG_Settings::get( 'weekly_scan' ) ) {
+			return false;
 		}
 		$to = OPG_Settings::get( 'scan_email' );
 		if ( ! is_email( $to ) ) {
-			return;
+			return false;
 		}
-		$dropped  = is_array( $previous ) && isset( $previous['score'] ) && $result['score'] < $previous['score'];
-		$critical = $result['counts']['fail'] > 0;
-		$overdue  = OPG_Requests::count_overdue();
-		if ( ! $dropped && ! $critical && ! $overdue ) {
-			return;
-		}
+		global $wpdb;
+		$since    = gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS );
+		$consents = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}opg_consent_log WHERE created_at > %s", $since ) ); // phpcs:ignore
+		$requests = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}opg_requests WHERE created_at > %s", $since ) ); // phpcs:ignore
+		$failed   = OPG_Audit_Log::failed_logins( 30 * 24 );
+		$site     = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+
 		$lines   = array();
-		$lines[] = sprintf( 'ציון ציות לפרטיות באתר %s: %d/100', home_url(), $result['score'] );
-		if ( $dropped ) {
-			$lines[] = sprintf( 'הציון ירד מ-%d.', (int) $previous['score'] );
-		}
-		if ( $overdue ) {
-			$lines[] = sprintf( 'יש %d בקשות מימוש זכויות שחרגו מהמועד!', $overdue );
-		}
+		$lines[] = 'דוח פרטיות חודשי - ' . $site . ' (' . home_url() . ')';
+		$lines[] = wp_date( 'F Y' );
 		$lines[] = '';
-		$lines[] = 'ממצאים שדורשים טיפול:';
-		foreach ( $result['checks'] as $check ) {
-			if ( 'fail' === $check['status'] ) {
-				$lines[] = '✗ ' . $check['title'] . ' - ' . wp_strip_all_tags( $check['message'] );
+		$lines[] = sprintf( 'ציון ציות: %d/100', $result['score'] ) . ( is_numeric( $previous ) ? sprintf( ' (בחודש הקודם: %d)', (int) $previous ) : '' );
+		$lines[] = sprintf( 'תקין: %d · לשיפור: %d · קריטי: %d', $result['counts']['pass'], $result['counts']['warn'], $result['counts']['fail'] );
+		$lines[] = '';
+		$lines[] = 'פעילות ב-30 הימים האחרונים:';
+		$lines[] = sprintf( '- הסכמות שנרשמו: %d', $consents );
+		$lines[] = sprintf( '- בקשות זכויות חדשות: %d (פתוחות כעת: %d, באיחור: %d)', $requests, OPG_Requests::count_open(), OPG_Requests::count_overdue() );
+		$lines[] = sprintf( '- ניסיונות התחברות כושלים: %d', $failed );
+		foreach ( array( 'fail' => 'ממצאים קריטיים:', 'warn' => 'לשיפור:' ) as $status => $title ) {
+			$items = array();
+			foreach ( $result['checks'] as $check ) {
+				if ( $status === $check['status'] ) {
+					$items[] = '- ' . $check['title'] . ': ' . trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( $check['message'] ) ) );
+				}
+			}
+			if ( $items ) {
+				$lines[] = '';
+				$lines[] = $title;
+				$lines   = array_merge( $lines, $items );
 			}
 		}
 		$lines[] = '';
 		$lines[] = 'לדוח המלא: ' . admin_url( 'admin.php?page=opg-scan' );
-		wp_mail( $to, sprintf( '[%s] דוח פרטיות שבועי - %d/100', wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ), $result['score'] ), implode( "\n", $lines ) );
+		update_option( 'opg_last_report_score', $result['score'], false );
+		return wp_mail( $to, sprintf( '[%s] דוח פרטיות חודשי - %d/100', $site, $result['score'] ), implode( "\n", $lines ) );
+	}
+
+	/**
+	 * Front end of pages generated by the plugin: hide the "review before publishing" note
+	 * and wrap the content so links/tables stay readable on any theme.
+	 *
+	 * @param string $content Content.
+	 * @return string
+	 */
+	public static function filter_doc_content( $content ) {
+		if ( is_admin() || ! is_singular( 'page' ) || ! in_the_loop() ) {
+			return $content;
+		}
+		$id = get_the_ID();
+		if ( ! $id || ! get_post_meta( $id, '_opg_doc', true ) ) {
+			return $content;
+		}
+		$content = preg_replace( '#<!--\s*opg-review-note\s*-->.*?<!--\s*/opg-review-note\s*-->#s', '', (string) $content );
+		return '<div class="opg-doc">' . $content . '</div>';
 	}
 
 	/**

@@ -174,6 +174,7 @@ class OPG_Admin {
 			'imported' => 'ההגדרות יובאו.',
 			'badjson'  => 'קובץ ההגדרות לא תקין.',
 			'fixed'    => 'בוצע.',
+			'report_sent'   => 'הדוח החודשי נשלח לכתובת שבהגדרות.',
 			'rights_ok'     => 'עמוד בקשות הפרטיות נוצר ופורסם, ונוסף אליו קישור בסוף מדיניות הפרטיות ובשורת הקישורים בפוטר.',
 			'rights_footer' => 'עמוד בקשות הפרטיות נוצר ופורסם ונוסף לשורת הקישורים בפוטר. את הקישור במדיניות לא הוספתי אוטומטית (המדיניות בנויה באלמנטור או לא מוגדרת) - הוסיפו אותו ידנית.',
 			'error'    => 'אירעה שגיאה.',
@@ -224,7 +225,8 @@ class OPG_Admin {
 			echo self::gauge( $last['score'] ); // phpcs:ignore
 			echo '<div class="opg-top-txt">';
 			printf( '<p class="opg-counts"><span class="opg-b opg-b-pass">%d תקין</span> <span class="opg-b opg-b-warn">%d לשיפור</span> <span class="opg-b opg-b-fail">%d קריטי</span> <span class="opg-b opg-b-info">%d מידע</span></p>', (int) $last['counts']['pass'], (int) $last['counts']['warn'], (int) $last['counts']['fail'], (int) $last['counts']['info'] );
-			printf( '<p>סריקה אחרונה: %s · סריקה אוטומטית שבועית %s</p>', esc_html( wp_date( 'd/m/Y H:i', $last['time'] ) ), OPG_Settings::get( 'weekly_scan' ) ? 'פעילה' : 'כבויה' );
+			$next = wp_next_scheduled( OPG_Plugin::CRON_REPORT );
+			printf( '<p>סריקה אחרונה: %s · דוח חודשי במייל: %s</p>', esc_html( wp_date( 'd/m/Y H:i', $last['time'] ) ), OPG_Settings::get( 'weekly_scan' ) ? 'פעיל' . ( $next ? ' (הבא: ' . esc_html( wp_date( 'd/m/Y', $next ) ) . ')' : '' ) : 'כבוי' );
 			if ( $last['home_error'] ) {
 				printf( '<p class="opg-muted">לא ניתן היה לטעון את דף הבית לבדיקת קוד (%s) - חלק מהבדיקות מבוססות על התוספים בלבד.</p>', esc_html( $last['home_error'] ) );
 			}
@@ -235,6 +237,7 @@ class OPG_Admin {
 		echo '<div class="opg-top-actions">';
 		printf( '<a class="button button-primary button-hero" href="%s">סריקה עכשיו</a> ', esc_url( self::post_url( 'run_scan' ) ) );
 		printf( '<a class="button" href="%s">ביקורת שנתית בוצעה</a> ', esc_url( self::post_url( 'mark_review' ) ) );
+		printf( '<a class="button" href="%s">שליחת הדוח החודשי עכשיו</a> ', esc_url( self::post_url( 'quick_fix', array( 'fix' => 'report' ) ) ) );
 		echo '<button type="button" class="button" onclick="window.print()">הדפסת הדוח</button>';
 		echo '</div></div>';
 
@@ -697,8 +700,8 @@ class OPG_Admin {
 		echo '<div class="opg-tab" id="tab-ops"><table class="form-table">';
 		self::f_text( 'requests_notify', 'דוא"ל להתראות על בקשות', '', 'email' );
 		self::f_text( 'requests_due_days', 'ימים למענה', 'לפי החוק - עד 30 יום.', 'number' );
-		self::f_bool( 'weekly_scan', 'סריקה שבועית', 'סריקה אוטומטית ושליחת דוח כשיש ממצא קריטי, ירידה בציון או בקשה באיחור' );
-		self::f_text( 'scan_email', 'דוא"ל לדוח השבועי', '', 'email' );
+		self::f_bool( 'weekly_scan', 'דוח חודשי במייל', 'פעם בחודש (ב-1 לחודש): ציון, ממצאים, הסכמות, בקשות ונסיונות התחברות. אין מיילים על כל שינוי. הסריקה עצמה רצה בשקט פעם בשבוע כדי שהדוח באתר יהיה עדכני.' );
+		self::f_text( 'scan_email', 'דוא"ל לדוח החודשי', '', 'email' );
 		self::f_bool( 'audit_log', 'יומן אבטחה', 'תיעוד התחברויות, ניסיונות כושלים, הרשאות, תוספים, ייצוא ומחיקה' );
 		self::f_bool( 'auto_footer_links', 'קישורי פרטיות בפוטר', 'שורת קישורים אוטומטית בתחתית כל עמוד לכל העמודים שהתוסף הפיק ופורסמו (מדיניות פרטיות, Privacy Policy, מדיניות Cookie, בקשות פרטיות) + הגדרות Cookie. אם הוספתם את <code>[opg_privacy_links]</code> לפוטר של התבנית - השורה האוטומטית לא תוצג פעמיים.' );
 		echo '</table></div>';
@@ -823,6 +826,9 @@ class OPG_Admin {
 		$msg = 'fixed';
 		if ( 'footer' === $fix ) {
 			OPG_Settings::update( array( 'auto_footer_links' => 1 ) );
+		}
+		if ( 'report' === $fix ) {
+			self::back( 'opg-scan', OPG_Plugin::run_monthly_report( true ) ? 'report_sent' : 'error' );
 		}
 		if ( 'rights' === $fix ) {
 			$res = OPG_Generator::setup_rights_page();
