@@ -203,7 +203,7 @@
 
 	function openBanner(withSettings) {
 		if (banner) { banner.remove(); }
-		if (reopen) { reopen.style.display = 'none'; }
+		if (reopen) { reopen.hidden = true; }
 		var L = B.labels || {};
 		var current = readChoice() || [];
 		banner = el('div', 'opg-cookie-banner opg-pos-' + (B.position || 'bottom'));
@@ -258,7 +258,7 @@
 			reopen.addEventListener('click', function () { openBanner(true); });
 			document.body.appendChild(reopen);
 		}
-		reopen.style.display = '';
+		reopen.hidden = false;
 	}
 
 	document.addEventListener('click', function (e) {

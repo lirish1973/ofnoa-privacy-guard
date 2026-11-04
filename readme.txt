@@ -4,7 +4,7 @@ Tags: privacy, consent, israel, amendment 13, cookies
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 
 Israeli Privacy Protection Law (Amendment 13) compliance: scanner, consent checkboxes on every form, consent log, data-subject requests, document generator, cookie banner.
@@ -24,6 +24,9 @@ Israeli Privacy Protection Law (Amendment 13) compliance: scanner, consent check
 Not legal advice. Review every generated document before publishing.
 
 == Changelog ==
+
+= 1.0.9 =
+* Cookie button and banner buttons hardened against theme button styles (square/pink border on Hello Elementor etc.).
 
 = 1.0.8 =
 * Cookie settings button: position (6 spots or hidden), offsets, size, background / icon / border colors, with live preview.

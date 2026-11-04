@@ -35,36 +35,34 @@ class OPG_Cookie_Banner {
 	 * @return string
 	 */
 	public static function fab_rules( $s = null ) {
-		$s    = $s ? $s : OPG_Settings::all();
-		$pos  = (string) $s['fab_position'];
-		$sel  = 'body button.opg-cookie-fab';
+		$s   = $s ? $s : OPG_Settings::all();
+		$pos = (string) $s['fab_position'];
+		$b   = 'button.opg-cookie-fab:not(#opg-x)';
+		$all = $b . ',' . $b . ':hover,' . $b . ':focus,' . $b . ':active';
 		if ( 'hidden' === $pos ) {
-			return $sel . '{display:none!important}';
+			return $all . '{display:none!important}';
 		}
 		$x    = min( 400, absint( $s['fab_offset_x'] ) );
 		$y    = min( 400, absint( $s['fab_offset_y'] ) );
 		$size = max( 24, min( 80, absint( $s['fab_size'] ) ) );
 		$icon = (int) round( $size * 0.52 );
-		$r    = array( 'width:' . $size . 'px', 'height:' . $size . 'px', 'top:auto', 'bottom:auto', 'left:auto', 'right:auto', 'transform:none' );
 		$v    = 0 === strpos( $pos, 'top' ) ? 'top' : ( 0 === strpos( $pos, 'middle' ) ? 'middle' : 'bottom' );
 		$h    = false !== strpos( $pos, 'right' ) ? 'right' : 'left';
+		$r    = array(
+			'width:' . $size . 'px!important',
+			'height:' . $size . 'px!important',
+			'top:' . ( 'top' === $v ? $y . 'px' : ( 'middle' === $v ? '50%' : 'auto' ) ) . '!important',
+			'bottom:' . ( 'bottom' === $v ? $y . 'px' : 'auto' ) . '!important',
+			'left:' . ( 'left' === $h ? $x . 'px' : 'auto' ) . '!important',
+			'right:' . ( 'right' === $h ? $x . 'px' : 'auto' ) . '!important',
+		);
 		if ( 'middle' === $v ) {
-			$r[] = 'top:50%';
-			$r[] = 'transform:translateY(-50%)';
-		} else {
-			$r[] = $v . ':' . $y . 'px';
+			$r[] = 'transform:translateY(-50%)!important';
 		}
-		$r[] = $h . ':' . $x . 'px';
-		if ( $s['fab_bg'] ) {
-			$r[] = 'background:' . $s['fab_bg'];
-		}
-		if ( $s['fab_color'] ) {
-			$r[] = 'color:' . $s['fab_color'];
-		}
-		if ( $s['fab_border'] ) {
-			$r[] = 'box-shadow:0 0 0 2px ' . $s['fab_border'] . ',0 2px 10px rgba(0,0,0,.2)';
-		}
-		return $sel . '{' . implode( ';', $r ) . '}' . $sel . ' svg{width:' . $icon . 'px;height:' . $icon . 'px}';
+		$r[] = 'background:' . ( $s['fab_bg'] ? $s['fab_bg'] : '#ffffff' ) . '!important';
+		$r[] = 'color:' . ( $s['fab_color'] ? $s['fab_color'] : '#1d4ed8' ) . '!important';
+		$r[] = 'box-shadow:' . ( $s['fab_border'] ? '0 0 0 2px ' . $s['fab_border'] . ',' : '' ) . '0 2px 10px rgba(0,0,0,.2)!important';
+		return $all . '{' . implode( ';', $r ) . '}' . $b . ' svg{width:' . $icon . 'px!important;height:' . $icon . 'px!important}';
 	}
 
 	/**
