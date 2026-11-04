@@ -27,6 +27,33 @@
 			});
 			activate((location.hash || '').replace('#tab-', '') || tabs[0].getAttribute('data-opg-tab'));
 		}
+		// Cookie button: color pickers + live preview.
+		var demo = document.getElementById('opg-fab-demo');
+		var val = function (k) { var el = document.querySelector('[name="opg[' + k + ']"]'); return el ? el.value : ''; };
+		var preview = function () {
+			if (!demo) { return; }
+			var pos = val('fab_position'), x = Math.min(60, parseInt(val('fab_offset_x') || 0, 10)), y = Math.min(60, parseInt(val('fab_offset_y') || 0, 10));
+			var size = Math.max(24, Math.min(80, parseInt(val('fab_size') || 38, 10)));
+			demo.style.cssText = '';
+			demo.style.display = pos === 'hidden' ? 'none' : 'flex';
+			demo.style.width = demo.style.height = size + 'px';
+			demo.style.background = val('fab_bg') || '#fff';
+			demo.style.color = val('fab_color') || '#1d4ed8';
+			if (val('fab_border')) { demo.style.boxShadow = '0 0 0 2px ' + val('fab_border') + ',0 2px 10px rgba(0,0,0,.2)'; }
+			var svg = demo.querySelector('svg'); svg.setAttribute('width', Math.round(size * 0.52)); svg.setAttribute('height', Math.round(size * 0.52));
+			if (pos.indexOf('middle') === 0) { demo.style.top = '50%'; demo.style.transform = 'translateY(-50%)'; }
+			else if (pos.indexOf('top') === 0) { demo.style.top = y + 'px'; } else { demo.style.bottom = y + 'px'; }
+			if (pos.indexOf('right') > -1) { demo.style.right = x + 'px'; } else { demo.style.left = x + 'px'; }
+		};
+		if (window.jQuery && jQuery.fn.wpColorPicker) {
+			jQuery('.opg-color').wpColorPicker({ change: function () { setTimeout(preview, 0); }, clear: function () { setTimeout(preview, 0); } });
+		}
+		['fab_position', 'fab_offset_x', 'fab_offset_y', 'fab_size'].forEach(function (k) {
+			var el = document.querySelector('[name="opg[' + k + ']"]');
+			if (el) { el.addEventListener('input', preview); el.addEventListener('change', preview); }
+		});
+		preview();
+
 		// Hide passing checks.
 		var hide = document.querySelector('[data-opg-hide-pass]');
 		if (hide) {

@@ -25,6 +25,53 @@ class OPG_Cookie_Banner {
 		if ( OPG_Settings::get( 'consent_mode_v2' ) ) {
 			add_action( 'wp_head', array( __CLASS__, 'consent_mode_defaults' ), 1 );
 		}
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'fab_css' ), 20 );
+	}
+
+	/**
+	 * CSS for the floating "cookie settings" button from the settings.
+	 *
+	 * @param array|null $s Settings (for preview).
+	 * @return string
+	 */
+	public static function fab_rules( $s = null ) {
+		$s    = $s ? $s : OPG_Settings::all();
+		$pos  = (string) $s['fab_position'];
+		$sel  = 'body button.opg-cookie-fab';
+		if ( 'hidden' === $pos ) {
+			return $sel . '{display:none!important}';
+		}
+		$x    = min( 400, absint( $s['fab_offset_x'] ) );
+		$y    = min( 400, absint( $s['fab_offset_y'] ) );
+		$size = max( 24, min( 80, absint( $s['fab_size'] ) ) );
+		$icon = (int) round( $size * 0.52 );
+		$r    = array( 'width:' . $size . 'px', 'height:' . $size . 'px', 'top:auto', 'bottom:auto', 'left:auto', 'right:auto', 'transform:none' );
+		$v    = 0 === strpos( $pos, 'top' ) ? 'top' : ( 0 === strpos( $pos, 'middle' ) ? 'middle' : 'bottom' );
+		$h    = false !== strpos( $pos, 'right' ) ? 'right' : 'left';
+		if ( 'middle' === $v ) {
+			$r[] = 'top:50%';
+			$r[] = 'transform:translateY(-50%)';
+		} else {
+			$r[] = $v . ':' . $y . 'px';
+		}
+		$r[] = $h . ':' . $x . 'px';
+		if ( $s['fab_bg'] ) {
+			$r[] = 'background:' . $s['fab_bg'];
+		}
+		if ( $s['fab_color'] ) {
+			$r[] = 'color:' . $s['fab_color'];
+		}
+		if ( $s['fab_border'] ) {
+			$r[] = 'box-shadow:0 0 0 2px ' . $s['fab_border'] . ',0 2px 10px rgba(0,0,0,.2)';
+		}
+		return $sel . '{' . implode( ';', $r ) . '}' . $sel . ' svg{width:' . $icon . 'px;height:' . $icon . 'px}';
+	}
+
+	/**
+	 * Attach the button CSS to the front stylesheet.
+	 */
+	public static function fab_css() {
+		wp_add_inline_style( 'opg-front', self::fab_rules() );
 	}
 
 	/**

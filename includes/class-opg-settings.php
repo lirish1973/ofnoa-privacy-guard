@@ -76,6 +76,13 @@ class OPG_Settings {
 			'cookie_text'            => 'אנו משתמשים בקובצי Cookie כדי שהאתר יעבוד, למדידת שימוש ולשיווק. קובצי Cookie חיוניים פועלים תמיד; את השאר אפשר לאשר או לדחות.',
 			'cookie_position'        => 'bottom',
 			'consent_mode_v2'        => 1,
+			'fab_position'           => 'bottom-left',
+			'fab_offset_x'           => 14,
+			'fab_offset_y'           => 14,
+			'fab_size'               => 38,
+			'fab_bg'                 => '#ffffff',
+			'fab_color'              => '#1d4ed8',
+			'fab_border'             => '',
 
 			// Rights requests.
 			'requests_page_id'       => 0,
@@ -143,6 +150,13 @@ class OPG_Settings {
 			'cookie_text'            => 'html',
 			'cookie_position'        => 'choice:bottom,top,box',
 			'consent_mode_v2'        => 'bool',
+			'fab_position'           => 'choice:bottom-left,bottom-right,top-left,top-right,middle-left,middle-right,hidden',
+			'fab_offset_x'           => 'int',
+			'fab_offset_y'           => 'int',
+			'fab_size'               => 'int',
+			'fab_bg'                 => 'color',
+			'fab_color'              => 'color',
+			'fab_border'             => 'color',
 			'requests_page_id'       => 'int',
 			'requests_notify'        => 'email',
 			'requests_due_days'      => 'int',
@@ -219,6 +233,9 @@ class OPG_Settings {
 				return empty( $value ) ? 0 : 1;
 			case 'int':
 				return absint( $value );
+			case 'color':
+				$value = sanitize_hex_color( (string) $value );
+				return $value ? $value : '';
 			case 'email':
 				return sanitize_email( (string) $value );
 			case 'textarea':

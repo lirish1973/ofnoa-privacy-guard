@@ -52,7 +52,12 @@ class OPG_Admin {
 			return;
 		}
 		wp_enqueue_style( 'opg-admin', OPG_URL . 'assets/css/admin.css', array(), OPG_VERSION );
-		wp_enqueue_script( 'opg-admin', OPG_URL . 'assets/js/admin.js', array(), OPG_VERSION, true );
+		$deps = array();
+		if ( false !== strpos( (string) $hook, 'opg-settings' ) ) {
+			wp_enqueue_style( 'wp-color-picker' );
+			$deps = array( 'jquery', 'wp-color-picker' );
+		}
+		wp_enqueue_script( 'opg-admin', OPG_URL . 'assets/js/admin.js', $deps, OPG_VERSION, true );
 	}
 
 	/**
@@ -561,6 +566,11 @@ class OPG_Admin {
 		printf( '<tr><th>%2$s</th><td><label><input type="checkbox" name="opg[%1$s]" value="1"%3$s> %4$s</label></td></tr>', esc_attr( $key ), esc_html( $label ), checked( (bool) $v, true, false ), $help ? wp_kses_post( $help ) : 'פעיל' );
 	}
 
+	private static function f_color( $key, $label, $help = '' ) {
+		$v = OPG_Settings::get( $key );
+		printf( '<tr><th><label for="opg-%1$s">%2$s</label></th><td><input type="text" class="opg-color" id="opg-%1$s" name="opg[%1$s]" value="%3$s" data-default-color="%4$s">%5$s</td></tr>', esc_attr( $key ), esc_html( $label ), esc_attr( (string) $v ), esc_attr( (string) OPG_Settings::defaults()[ $key ] ), $help ? '<p class="description">' . wp_kses_post( $help ) . '</p>' : '' );
+	}
+
 	private static function f_select( $key, $label, array $choices, $help = '' ) {
 		$v = OPG_Settings::get( $key );
 		echo '<tr><th>' . esc_html( $label ) . '</th><td><select name="opg[' . esc_attr( $key ) . ']">';
@@ -694,6 +704,28 @@ class OPG_Admin {
 			)
 		);
 		self::f_area( 'cookie_text', 'נוסח הבאנר', '', 3 );
+		echo '<tr><th colspan="2"><h3 style="margin:10px 0 0">כפתור הגדרות ה-Cookie (הכפתור הצף)</h3></th></tr>';
+		self::f_select(
+			'fab_position',
+			'מיקום',
+			array(
+				'bottom-left'  => 'למטה משמאל',
+				'bottom-right' => 'למטה מימין',
+				'top-left'     => 'למעלה משמאל',
+				'top-right'    => 'למעלה מימין',
+				'middle-left'  => 'באמצע משמאל',
+				'middle-right' => 'באמצע מימין',
+				'hidden'       => 'מוסתר (אז חובה קישור [opg_cookie_settings] או שורת הקישורים בפוטר)',
+			),
+			'בחרו צד שלא מתנגש עם כפתור וואטסאפ / צ\'אט / חזרה למעלה.'
+		);
+		self::f_text( 'fab_offset_x', 'מרחק מהצד (px)', '', 'number' );
+		self::f_text( 'fab_offset_y', 'מרחק מלמעלה / מלמטה (px)', 'לא חל במיקום "באמצע".', 'number' );
+		self::f_text( 'fab_size', 'גודל (px)', 'בין 24 ל-80.', 'number' );
+		self::f_color( 'fab_bg', 'צבע רקע' );
+		self::f_color( 'fab_color', 'צבע האייקון' );
+		self::f_color( 'fab_border', 'צבע מסגרת', 'ריק = בלי מסגרת.' );
+		echo '<tr><th>תצוגה מקדימה</th><td><div class="opg-fab-preview" id="opg-fab-preview"><span class="opg-fab-demo" id="opg-fab-demo"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zm-3.5 7a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm2 6a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm5-1a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg></span></div></td></tr>';
 		self::f_bool( 'consent_mode_v2', 'Google Consent Mode v2', 'ברירת מחדל "נדחה" לגוגל אנליטיקס/אדס עד אישור; שולח <code>fbq(\'consent\')</code> ל-Meta ואירוע <code>opg_consent</code> ל-dataLayer' );
 		echo '</table><p class="opg-muted">להשהיית סקריפט עד הסכמה: <code>&lt;script type="text/plain" data-opg-category="analytics"&gt;…&lt;/script&gt;</code> (קטגוריות: analytics, marketing, functional).</p></div>';
 
