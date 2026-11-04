@@ -1,0 +1,41 @@
+/* Ofnoa Privacy Guard - admin */
+.opg-wrap{max-width:1200px}
+.opg-title .dashicons{font-size:28px;width:28px;height:28px;color:#1d4ed8;vertical-align:middle}
+.opg-top{display:flex;flex-wrap:wrap;align-items:center;gap:24px;background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:20px;margin:16px 0}
+.opg-top-txt{flex:1 1 300px}
+.opg-top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.opg-gauge{--p:0;--c:#16a34a;width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),#e5e7eb 0);display:flex;align-items:center;justify-content:center;position:relative;flex:0 0 auto}
+.opg-gauge::before{content:"";position:absolute;inset:12px;background:#fff;border-radius:50%}
+.opg-gauge span{position:relative;font-size:34px;font-weight:700;color:#111}
+.opg-gauge small{position:relative;font-size:12px;color:#666;margin-top:14px}
+.opg-gauge.opg-mid{--c:#f59e0b}.opg-gauge.opg-bad{--c:#dc2626}
+.opg-widget .opg-gauge{width:90px;height:90px;float:left;margin:0 0 8px 12px}
+.opg-widget .opg-gauge span{font-size:26px}
+.opg-b{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.6;margin-inline-start:6px}
+.opg-b-pass{background:#dcfce7;color:#166534}.opg-b-warn{background:#fef3c7;color:#92400e}.opg-b-fail{background:#fee2e2;color:#991b1b}.opg-b-info{background:#e0e7ff;color:#3730a3}
+.opg-counts .opg-b{font-size:13px;margin:0 0 0 6px}
+.opg-disclaimer,.opg-muted{color:#646970;font-size:12.5px}
+.opg-group{margin-top:28px;border-bottom:2px solid #1d4ed8;padding-bottom:6px}
+.opg-checks{display:grid;gap:8px}
+.opg-check{background:#fff;border:1px solid #dcdcde;border-inline-start:4px solid #94a3b8;border-radius:6px;padding:10px 14px}
+.opg-check.opg-s-pass{border-inline-start-color:#16a34a}.opg-check.opg-s-warn{border-inline-start-color:#f59e0b}.opg-check.opg-s-fail{border-inline-start-color:#dc2626;background:#fffafa}.opg-check.opg-s-info{border-inline-start-color:#6366f1}
+.opg-check-head{display:flex;align-items:center;gap:8px}
+.opg-check-head strong{flex:1}
+.opg-check-msg{margin:6px 0;color:#333}
+.opg-check-fix{background:#f6f7f7;padding:6px 10px;border-radius:4px;margin:6px 0}
+.opg-ul{margin:6px 18px;list-style:disc}
+.opg-hide-pass .opg-s-pass{display:none}
+.opg-filter{margin:10px 0}
+.opg-card{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:16px 20px;margin:16px 0}
+.opg-docs td{vertical-align:middle}
+.opg-timeline{margin:0;padding:0;list-style:none}
+.opg-timeline li{border-inline-start:2px solid #c3c4c7;padding:4px 12px;margin:0 0 6px}
+.opg-timeline li span{display:block;color:#646970;font-size:12px}
+.opg-row-warn td{background:#fff8e5!important}
+.opg-tabs{margin-bottom:0}
+.opg-tab{display:none;background:#fff;border:1px solid #c3c4c7;border-top:0;padding:8px 20px}
+.opg-tab.is-active{display:block}
+.opg-checks-list label{line-height:2}
+.opg-search{margin:12px 0}
+.opg-save{position:sticky;bottom:0;background:#f0f0f1;padding:10px 0;margin:0}
+@media print{#adminmenumain,#wpadminbar,.opg-top-actions,.notice,#wpfooter,.opg-filter{display:none!important}#wpcontent{margin:0!important}}

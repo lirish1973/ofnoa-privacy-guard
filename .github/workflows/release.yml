@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read plugin version
+        id: v
+        run: |
+          VERSION=$(grep -m1 -E '^\s*\*\s*Version:' ofnoa-privacy-guard.php | sed -E 's/.*Version:\s*//' | tr -d '\r ')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Plugin version: $VERSION"
+
+      - name: Check if the release already exists
+        id: exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v${{ steps.v.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lint PHP
+        if: steps.exists.outputs.exists == '0'
+        run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+
+      - name: Build ZIP
+        if: steps.exists.outputs.exists == '0'
+        run: |
+          mkdir -p build/ofnoa-privacy-guard
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'build' --exclude '*.zip' --exclude 'README.md' ./ build/ofnoa-privacy-guard/
+          cd build && zip -rq ../ofnoa-privacy-guard.zip ofnoa-privacy-guard
+
+      - name: Publish release
+        if: steps.exists.outputs.exists == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.v.outputs.version }}" ofnoa-privacy-guard.zip \
+            --title "v${{ steps.v.outputs.version }}" \
+            --notes "Ofnoa Privacy Guard ${{ steps.v.outputs.version }}" \
+            --target "${GITHUB_SHA}" --latest
