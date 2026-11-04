@@ -14,6 +14,72 @@ class OPG_Generator {
 	 */
 	public static function init() {
 		add_action( 'transition_post_status', array( __CLASS__, 'on_publish' ), 10, 3 );
+		add_action( 'enqueue_block_editor_assets', array( __CLASS__, 'editor_notice' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'classic_notice' ) );
+	}
+
+	/**
+	 * Text of the editor-only review note.
+	 *
+	 * @return string
+	 */
+	private static function review_text() {
+		return 'העמוד הופק אוטומטית על ידי Ofnoa Privacy Guard מנתוני האתר. לפני פרסום: עברו על הנוסח, השלימו פרטים והתאימו אותו לעסק. מומלץ שעורך/ת דין יבדקו אותו.';
+	}
+
+	/**
+	 * Is the current edit screen a generated page?
+	 *
+	 * @return int Post id or 0.
+	 */
+	private static function editing_doc() {
+		$id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0; // phpcs:ignore
+		return ( $id && get_post_meta( $id, '_opg_doc', true ) && get_post_meta( $id, '_opg_needs_review', true ) ) ? $id : 0;
+	}
+
+	/** Block editor notice. */
+	public static function editor_notice() {
+		if ( ! self::editing_doc() ) {
+			return;
+		}
+		wp_add_inline_script( 'wp-notices', 'wp.domReady(function(){wp.data.dispatch("core/notices").createWarningNotice(' . wp_json_encode( self::review_text() ) . ',{isDismissible:true});});' );
+	}
+
+	/** Classic editor notice. */
+	public static function classic_notice() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || 'post' !== $screen->base || ! self::editing_doc() ) {
+			return;
+		}
+		echo '<div class="notice notice-warning"><p>' . esc_html( self::review_text() ) . '</p></div>';
+	}
+
+	/**
+	 * 1.0.6 migration: remove the note that older versions stored inside the page content.
+	 */
+	public static function strip_stored_notes() {
+		$ids = get_posts(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => 'any',
+				'meta_key'       => '_opg_doc', // phpcs:ignore
+				'posts_per_page' => 50,
+				'fields'         => 'ids',
+			)
+		);
+		foreach ( (array) $ids as $id ) {
+			$content = (string) get_post_field( 'post_content', $id );
+			$clean   = preg_replace( '#(<!-- wp:html -->\s*)?<!--\s*opg-review-note\s*-->.*?<!--\s*/opg-review-note\s*-->(\s*<!-- /wp:html -->)?\s*#s', '', $content );
+			$clean   = preg_replace( '#<p[^>]*>\s*<strong>טיוטה שהופקה אוטומטית על ידי Ofnoa Privacy Guard\.</strong>.*?</p>\s*#s', '', (string) $clean );
+			if ( $clean !== $content ) {
+				wp_update_post(
+					array(
+						'ID'           => $id,
+						'post_content' => $clean,
+					)
+				);
+			}
+		}
 	}
 
 	/**
@@ -196,10 +262,9 @@ class OPG_Generator {
 			'cookie_policy' => 'cookie-policy',
 			'rights_page'   => 'privacy-requests',
 		);
+		// The "review before publishing" note is shown in the editor only (never stored in the content,
+		// so it cannot leak into meta descriptions, excerpts or feeds).
 		$body   = self::render( $key );
-		if ( 'rights_page' !== $key ) {
-			$body = OPG_Templates::review_note() . "\n" . $body;
-		}
 		$post_id = wp_insert_post(
 			array(
 				'post_type'    => 'page',
@@ -214,6 +279,9 @@ class OPG_Generator {
 			return $post_id;
 		}
 		update_post_meta( $post_id, '_opg_doc', $key );
+		if ( 'rights_page' !== $key ) {
+			update_post_meta( $post_id, '_opg_needs_review', 1 );
+		}
 		self::mark( $key );
 
 		$s = array();

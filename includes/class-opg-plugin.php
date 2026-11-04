@@ -29,6 +29,12 @@ class OPG_Plugin {
 			update_option( 'opg_migrated_103', 1, false );
 		}
 
+		// 1.0.6: the review note no longer lives inside page content.
+		if ( ! get_option( 'opg_migrated_106' ) ) {
+			add_action( 'init', array( 'OPG_Generator', 'strip_stored_notes' ), 20 );
+			update_option( 'opg_migrated_106', 1, false );
+		}
+
 		OPG_Audit_Log::init();
 		OPG_Consent::init();
 		OPG_Requests::init();
