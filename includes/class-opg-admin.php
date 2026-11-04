@@ -722,7 +722,7 @@ class OPG_Admin {
 		self::f_text( 'fab_offset_x', 'מרחק מהצד (px)', '', 'number' );
 		self::f_text( 'fab_offset_y', 'מרחק מלמעלה / מלמטה (px)', 'לא חל במיקום "באמצע".', 'number' );
 		self::f_text( 'fab_size', 'גודל (px)', 'בין 24 ל-80.', 'number' );
-		self::f_color( 'fab_bg', 'צבע רקע' );
+		self::f_color( 'fab_bg', 'צבע רקע', 'אפשר לבחור בבוחר, או להקליד קוד כמו #ff6600 / ff6600 / rgb(255,102,0).' );
 		self::f_color( 'fab_color', 'צבע האייקון' );
 		self::f_color( 'fab_border', 'צבע מסגרת', 'ריק = בלי מסגרת.' );
 		echo '<tr><th>תצוגה מקדימה</th><td><div class="opg-fab-preview" id="opg-fab-preview"><span class="opg-fab-demo" id="opg-fab-demo"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zm-3.5 7a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm2 6a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm5-1a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg></span></div></td></tr>';

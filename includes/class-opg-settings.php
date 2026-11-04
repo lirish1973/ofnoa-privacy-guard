@@ -234,8 +234,7 @@ class OPG_Settings {
 			case 'int':
 				return absint( $value );
 			case 'color':
-				$value = sanitize_hex_color( (string) $value );
-				return $value ? $value : '';
+				return self::normalize_color( $value );
 			case 'email':
 				return sanitize_email( (string) $value );
 			case 'textarea':
@@ -248,6 +247,39 @@ class OPG_Settings {
 			default:
 				return sanitize_text_field( (string) $value );
 		}
+	}
+
+	/**
+	 * Accept "#ff0000", "ff0000", "#f00", "f00", "rgb(255,0,0)" and common color names.
+	 * Returns a #rrggbb / #rgb hex string, or '' for empty / unknown input.
+	 *
+	 * @param mixed $value Raw.
+	 * @return string
+	 */
+	public static function normalize_color( $value ) {
+		$v = strtolower( trim( (string) $value ) );
+		if ( '' === $v ) {
+			return '';
+		}
+		$names = array(
+			'white' => '#ffffff', 'black' => '#000000', 'red' => '#ff0000', 'green' => '#008000', 'blue' => '#0000ff',
+			'yellow' => '#ffff00', 'orange' => '#ffa500', 'purple' => '#800080', 'pink' => '#ffc0cb', 'gray' => '#808080',
+			'grey' => '#808080', 'navy' => '#000080', 'teal' => '#008080', 'gold' => '#ffd700', 'transparent' => '',
+		);
+		if ( isset( $names[ $v ] ) ) {
+			return $names[ $v ];
+		}
+		if ( preg_match( '/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/', $v, $m ) ) {
+			return sprintf( '#%02x%02x%02x', min( 255, (int) $m[1] ), min( 255, (int) $m[2] ), min( 255, (int) $m[3] ) );
+		}
+		$v = ltrim( $v, '#' );
+		if ( preg_match( '/^([0-9a-f]{3}|[0-9a-f]{6})$/', $v ) ) {
+			return '#' . $v;
+		}
+		if ( preg_match( '/^[0-9a-f]{8}$/', $v ) ) { // #rrggbbaa - drop alpha.
+			return '#' . substr( $v, 0, 6 );
+		}
+		return '';
 	}
 
 	/**

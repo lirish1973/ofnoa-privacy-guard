@@ -45,6 +45,17 @@
 			else if (pos.indexOf('top') === 0) { demo.style.top = y + 'px'; } else { demo.style.bottom = y + 'px'; }
 			if (pos.indexOf('right') > -1) { demo.style.right = x + 'px'; } else { demo.style.left = x + 'px'; }
 		};
+		// Typed hex without "#" (e.g. ff6600) is fixed on blur, so the picker and the preview accept it.
+		document.querySelectorAll('.opg-color').forEach(function (inp) {
+			inp.addEventListener('blur', function () {
+				var v = inp.value.trim();
+				if (/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) {
+					v = '#' + v;
+					if (window.jQuery && jQuery.fn.wpColorPicker) { jQuery(inp).wpColorPicker('color', v); } else { inp.value = v; }
+					preview();
+				}
+			});
+		});
 		if (window.jQuery && jQuery.fn.wpColorPicker) {
 			jQuery('.opg-color').wpColorPicker({ change: function () { setTimeout(preview, 0); }, clear: function () { setTimeout(preview, 0); } });
 		}
