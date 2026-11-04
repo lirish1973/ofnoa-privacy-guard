@@ -269,9 +269,59 @@ class OPG_Plugin {
 	}
 
 	/**
+	 * The one exception to "monthly report only": a rights request that passed its legal
+	 * deadline triggers an immediate email - once per request.
+	 *
+	 * @return int Alerts sent.
+	 */
+	public static function alert_overdue_requests() {
+		global $wpdb;
+		$to = OPG_Settings::get( 'requests_notify' );
+		if ( ! is_email( $to ) ) {
+			$to = OPG_Settings::get( 'scan_email' );
+		}
+		if ( ! is_email( $to ) ) {
+			return 0;
+		}
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . OPG_Requests::table() . " WHERE status IN ('new','in_progress') AND due_at < %s ORDER BY due_at", current_time( 'mysql', true ) ), ARRAY_A ); // phpcs:ignore
+		if ( ! $rows ) {
+			return 0;
+		}
+		$done  = (array) get_option( 'opg_overdue_alerted', array() );
+		$types = OPG_Requests::types();
+		$site  = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+		$sent  = 0;
+		foreach ( $rows as $r ) {
+			if ( in_array( (int) $r['id'], $done, true ) ) {
+				continue;
+			}
+			$days = (int) floor( ( time() - strtotime( $r['due_at'] . ' UTC' ) ) / DAY_IN_SECONDS );
+			$body = sprintf(
+				"בקשת מימוש זכויות #%d חרגה מהמועד החוקי למענה.\n\nסוג: %s\nשם: %s\nדוא\"ל: %s\nהתקבלה: %s\nמועד אחרון היה: %s (באיחור של %d ימים)\n\nלפי החוק יש להשיב לבקשה תוך 30 יום. אם מסרבים - יש להודיע בכתב ולנמק.\n\nלטיפול: %s",
+				$r['id'],
+				isset( $types[ $r['type'] ] ) ? $types[ $r['type'] ] : $r['type'],
+				$r['name'],
+				$r['email'],
+				get_date_from_gmt( $r['created_at'], 'd/m/Y' ),
+				get_date_from_gmt( $r['due_at'], 'd/m/Y' ),
+				max( 0, $days ),
+				admin_url( 'admin.php?page=opg-requests&view=' . (int) $r['id'] )
+			);
+			if ( wp_mail( $to, sprintf( '[%s] דחוף: בקשת פרטיות #%d באיחור', $site, $r['id'] ), $body ) ) {
+				$done[] = (int) $r['id'];
+				++$sent;
+				OPG_Requests::add_note( (int) $r['id'], 'system', 'נשלחה התראת איחור למנהל האתר.' );
+			}
+		}
+		update_option( 'opg_overdue_alerted', array_values( array_unique( array_slice( $done, -500 ) ) ), false );
+		return $sent;
+	}
+
+	/**
 	 * Daily cleanup of old log rows.
 	 */
 	public static function run_cleanup() {
+		self::alert_overdue_requests();
 		global $wpdb;
 		$months = max( 12, (int) OPG_Settings::get( 'log_retention_months', 84 ) );
 		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$months} months" ) );

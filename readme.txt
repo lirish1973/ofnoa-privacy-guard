@@ -4,7 +4,7 @@ Tags: privacy, consent, israel, amendment 13, cookies
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 
 Israeli Privacy Protection Law (Amendment 13) compliance: scanner, consent checkboxes on every form, consent log, data-subject requests, document generator, cookie banner.
@@ -24,6 +24,9 @@ Israeli Privacy Protection Law (Amendment 13) compliance: scanner, consent check
 Not legal advice. Review every generated document before publishing.
 
 == Changelog ==
+
+= 1.0.7 =
+* Immediate email (once per request) when a privacy request passes the 30-day legal deadline; everything else stays in the monthly report.
 
 = 1.0.6 =
 * The "review before publishing" note is shown in the editor only and removed from existing page content (it leaked into SEO meta descriptions).
