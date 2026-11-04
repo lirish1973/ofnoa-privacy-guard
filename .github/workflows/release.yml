@@ -55,5 +55,5 @@ jobs:
         run: |
           gh release create "v${{ steps.v.outputs.version }}" ofnoa-privacy-guard.zip \
             --title "v${{ steps.v.outputs.version }}" \
-            --notes "Ofnoa Privacy Guard ${{ steps.v.outputs.version }}" \
+            --notes "Ofnoa Privacy Guard ${{ steps.v.outputs.version }} - תוסף וורדפרס לציות לחוק הגנת הפרטיות (תיקון 13). להתקנה: להוריד את ofnoa-privacy-guard.zip ולהעלות דרך תוספים ← הוספת חדש ← העלאה. אתרים שכבר מותקן בהם התוסף יתעדכנו אוטומטית." \
             --target "${GITHUB_SHA}" --latest
